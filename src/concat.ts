@@ -2,7 +2,7 @@ import { Serializer, DeserializeResult } from "./Serializer";
 
 export type ConcatArg<Prev, Cur> = Serializer<Cur> | ((prev: Prev) => Serializer<Cur>);
 
-function _concat(...args: ConcatArg<any[], any>[]): Serializer<any[]> {
+export function _concat(...args: ConcatArg<any[], any>[]): Serializer<any[]> {
   return new Serializer({
     serialize: value => value.map((v, i) => {
       let arg = args[i];
