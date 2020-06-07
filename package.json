@@ -2,15 +2,21 @@
   "name": "zerialize",
   "version": "0.0.1",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "clean": "rm -rf dist",
+    "build": "npm run clean; tsc",
+    "prepack": "npm run build",
+    "index": "create-index -X ts -x ts -Sui src"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^14.0.11",
+    "create-index-better": "^1.4.1",
     "ts-node": "^8.10.2",
     "typescript": "^3.9.5"
   }
