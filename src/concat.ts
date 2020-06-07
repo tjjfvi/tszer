@@ -16,15 +16,16 @@ export function _concat(...args: ConcatArg<any[], any>[]): Serializer<any[]> {
         cur.write(buf, off + acc.length);
       }
     }), { length: 0, write: () => { } }),
-    deserialize: (buf, off) => args.reduce<DeserializeResult<any[]>>((acc, arg) => {
+    deserialize: (buf, off) => args.reduce<Promise<DeserializeResult<any[]>>>(async (accP, arg) => {
+      let acc = await accP;
       if (typeof arg === "function")
         arg = arg(acc.value);
-      let result = arg.deserialize(buf, off + acc.length);
+      let result = await arg.deserialize(buf, off + acc.length);
       return {
         length: acc.length + result.length,
         value: [...acc.value, result.value],
       }
-    }, { length: 0, value: [] }),
+    }, Promise.resolve({ length: 0, value: [] }))
   })
 }
 

@@ -10,7 +10,7 @@ export interface DeserializeResult<T> {
 }
 
 export type SerializeFunc<T> = (value: T) => SerializeResult
-export type DeserializeFunc<T> = (buffer: Buffer, offset: number) => DeserializeResult<T>
+export type DeserializeFunc<T> = (buffer: Buffer, offset: number) => DeserializeResult<T> | Promise<DeserializeResult<T>>
 
 export interface SerializerArgs<T> {
   serialize: SerializeFunc<T>,
@@ -18,7 +18,7 @@ export interface SerializerArgs<T> {
 }
 
 export type ConstLengthSerializeFunc<T> = (value: T, buffer: Buffer, offset: number) => void
-export type ConstLengthDeserializeFunc<T> = (buffer: Buffer, offset: number) => T
+export type ConstLengthDeserializeFunc<T> = (buffer: Buffer, offset: number) => T | Promise<T>
 
 export interface ConstLengthSerializerArgs<T> {
   length: number,
@@ -40,9 +40,9 @@ export class Serializer<T> {
         length,
         write: (buffer, offset) => args.serialize(value, buffer, offset),
       })
-      this.deserialize = (buffer, offset) => ({
+      this.deserialize = async (buffer, offset) => ({
         length,
-        value: args.deserialize(buffer, offset),
+        value: await args.deserialize(buffer, offset),
       });
     } else {
       this.serialize = args.serialize;
@@ -55,13 +55,13 @@ export class Serializer<T> {
     deserialize,
   }: {
     serialize: (value: U) => T,
-    deserialize: (value: T) => U,
+    deserialize: (value: T) => U | Promise<U>,
   }) {
     return new Serializer<U>({
       serialize: value => this.serialize(serialize(value)),
-      deserialize: (buffer: Buffer, offset: number) => {
-        const result = this.deserialize(buffer, offset);
-        return { ...result, value: deserialize(result.value) };
+      deserialize: async (buffer: Buffer, offset: number) => {
+        const result = await this.deserialize(buffer, offset);
+        return { ...result, value: await deserialize(result.value) };
       }
     })
   }
@@ -73,8 +73,8 @@ export class Serializer<T> {
     return buffer;
   }
 
-  static deserialize<T>(serializer: Serializer<T>, buffer: Buffer) {
-    return serializer.deserialize(buffer, 0).value;
+  static async deserialize<T>(serializer: Serializer<T>, buffer: Buffer) {
+    return (await serializer.deserialize(buffer, 0)).value;
   }
 
 }

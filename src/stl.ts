@@ -58,7 +58,9 @@ const stlMesh = () =>
 
 const stlFile = readFileSync("../escad-testtest.stl");
 
-let mesh = Serializer.deserialize(stlMesh(), stlFile);
 
-console.log(createHash("sha256").update(stlFile).digest().toString("hex"));
-console.log(createHash("sha256").update(Serializer.serialize(stlMesh(), mesh)).digest().toString("hex"));
+(async () => {
+  let mesh = await Serializer.deserialize(stlMesh(), stlFile);
+  console.log(createHash("sha256").update(stlFile).digest().toString("hex"));
+  console.log(createHash("sha256").update(Serializer.serialize(stlMesh(), mesh)).digest().toString("hex"));
+})
