@@ -28,25 +28,33 @@ export interface ConstLengthSerializerArgs<T> {
 
 export class Serializer<T> {
 
-  serialize: SerializeFunc<T>;
-  deserialize: DeserializeFunc<T>;
+  private _serialize: SerializeFunc<T>;
+  private _deserialize: DeserializeFunc<T>;
+
+  serialize(value: T) {
+    return this._serialize(value);
+  }
+
+  async deserialize(buffer: Buffer, offset: number) {
+    return await this._deserialize(buffer, offset);
+  }
 
   constructor(args: ConstLengthSerializerArgs<T>)
   constructor(args: SerializerArgs<T>)
   constructor(args: SerializerArgs<T> | ConstLengthSerializerArgs<T>) {
     if ("length" in args) {
       const { length } = args;
-      this.serialize = value => ({
+      this._serialize = value => ({
         length,
         write: (buffer, offset) => args.serialize(value, buffer, offset),
       })
-      this.deserialize = async (buffer, offset) => ({
+      this._deserialize = async (buffer, offset) => ({
         length,
         value: await args.deserialize(buffer, offset),
       });
     } else {
-      this.serialize = args.serialize;
-      this.deserialize = args.deserialize;
+      this._serialize = args.serialize;
+      this._deserialize = args.deserialize;
     }
   }
 
