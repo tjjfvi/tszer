@@ -74,6 +74,17 @@ export class Serializer<T> {
     })
   }
 
+  errorOnNull(message: string) {
+    return this.map<NonNullable<T>>({
+      serialize: v => v,
+      deserialize: v => {
+        if (v == null)
+          throw new Error(message);
+        return v as NonNullable<T>;
+      }
+    })
+  }
+
   static serialize<T>(serializer: Serializer<T>, value: T) {
     const { length, write } = serializer.serialize(value);
     const buffer = Buffer.alloc(length);
