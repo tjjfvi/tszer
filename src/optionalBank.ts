@@ -29,31 +29,3 @@ export function optionalBank(...args: Serializer<any>[]): Serializer<any> {
     deserialize: ([, vals]) => vals,
   })
 }
-
-interface Obj {
-  a?: number,
-  b?: string,
-  c?: Array<string>,
-}
-
-const objs: Obj[] = [
-  {},
-  { a: 5 },
-  { c: ["25"] },
-  { a: 6, b: "test" },
-];
-
-const objS = () =>
-  optionalBank(
-    doubleLE(),
-    string(),
-    array(string()),
-  ).map<Obj>({
-    serialize: ({ a, b, c }) => [a, b, c],
-    deserialize: ([a, b, c]) => ({ a, b, c })
-  })
-
-objs.map(obj => {
-  console.log(obj);
-  console.log(Serializer.deserialize(objS(), Serializer.serialize(objS(), obj)))
-})
