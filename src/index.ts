@@ -11,7 +11,6 @@ export * from './flags';
 export * from './float';
 export * from './int';
 export * from './optionalBank';
-export * from './stl';
 export * from './string';
 export * from './uint';
 
