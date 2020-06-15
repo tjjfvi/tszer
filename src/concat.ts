@@ -1,5 +1,5 @@
-import { Serializer, DeserializeResult } from "./Serializer";
-import { enga } from "enga";
+import { Serializer, DeserializeResult, SerializeResult } from "./Serializer";
+import { enga, Enga } from "enga";
 import { deserialize } from "v8";
 import { AsyncEnga, asyncEnga } from "enga/async";
 
@@ -18,13 +18,13 @@ export function _concat(...args: ConcatArg<any[], any>[]): Serializer<any[]> {
         curE,
         cur => ({
           length: acc.length + cur.length,
-          write: (buf, off) => {
-            acc.write(buf, off);
-            cur.write(buf, off + acc.length);
-          }
+          write: (buf, off) => enga(
+            () => acc.write(buf, off),
+            () => cur.write(buf, off + acc.length),
+          )
         })
       )
-    ), enga(() => ({ length: 0, write: () => { } }))),
+    ), enga(() => ({ length: 0, write: () => enga(() => { }) }))),
     deserialize: (buf, off) => args.reduce<AsyncEnga<DeserializeResult<any[]>>>((accE, arg) => asyncEnga(
       accE,
       async acc => {

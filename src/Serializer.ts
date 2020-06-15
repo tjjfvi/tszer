@@ -3,7 +3,7 @@ import { AsyncEnga, asyncEnga } from "enga/async";
 
 export interface SerializeResult {
   length: number,
-  write: (buffer: Buffer, offset: number) => void
+  write: (buffer: Buffer, offset: number) => Enga<void>
 };
 
 export interface DeserializeResult<T> {
@@ -40,7 +40,7 @@ export class Serializer<T> {
       const { length } = args;
       this.serialize = value => enga(() => ({
         length,
-        write: (buffer, offset) => args.serialize(value, buffer, offset),
+        write: (buffer, offset) => enga(() => args.serialize(value, buffer, offset)),
       }))
       this.deserialize = (buffer, offset) => asyncEnga(async () => ({
         length,
