@@ -85,7 +85,7 @@ export class Serializer<T> {
   static serialize<T>(serializer: Serializer<T>, value: T) {
     const { length, write } = serializer.serialize(value).execute();
     const buffer = Buffer.alloc(length);
-    write(buffer, 0);
+    write(buffer, 0).execute();
     return buffer;
   }
 
