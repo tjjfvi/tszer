@@ -19,5 +19,8 @@
     "create-index-better": "^1.4.1",
     "ts-node": "^8.10.2",
     "typescript": "^3.9.5"
+  },
+  "dependencies": {
+    "enga": "^1.0.1"
   }
 }

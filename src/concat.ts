@@ -1,4 +1,7 @@
 import { Serializer, DeserializeResult } from "./Serializer";
+import { enga } from "enga";
+import { deserialize } from "v8";
+import { AsyncEnga, asyncEnga } from "enga/async";
 
 export type ConcatArg<Prev, Cur> = Serializer<Cur> | ((prev: Prev) => Serializer<Cur>);
 
@@ -9,23 +12,33 @@ export function _concat(...args: ConcatArg<any[], any>[]): Serializer<any[]> {
       if (typeof arg === "function")
         arg = arg(value.slice(0, i));
       return arg.serialize(v);
-    }).reduce((acc, cur) => ({
-      length: acc.length + cur.length,
-      write: (buf, off) => {
-        acc.write(buf, off);
-        cur.write(buf, off + acc.length);
+    }).reduce((accE, curE) => enga(
+      accE,
+      acc => enga(
+        curE,
+        cur => ({
+          length: acc.length + cur.length,
+          write: (buf, off) => {
+            acc.write(buf, off);
+            cur.write(buf, off + acc.length);
+          }
+        })
+      )
+    ), enga(() => ({ length: 0, write: () => { } }))),
+    deserialize: (buf, off) => args.reduce<AsyncEnga<DeserializeResult<any[]>>>((accE, arg) => asyncEnga(
+      accE,
+      async acc => {
+        if (typeof arg === "function")
+          arg = arg(acc.value);
+        return asyncEnga(
+          arg.deserialize(buf, off + acc.length),
+          async result => ({
+            length: acc.length + result.length,
+            value: [...acc.value, result.value],
+          })
+        )
       }
-    }), { length: 0, write: () => { } }),
-    deserialize: (buf, off) => args.reduce<Promise<DeserializeResult<any[]>>>(async (accP, arg) => {
-      let acc = await accP;
-      if (typeof arg === "function")
-        arg = arg(acc.value);
-      let result = await arg.deserialize(buf, off + acc.length);
-      return {
-        length: acc.length + result.length,
-        value: [...acc.value, result.value],
-      }
-    }, Promise.resolve({ length: 0, value: [] }))
+    ), asyncEnga(async () => ({ length: 0, value: [] }))),
   })
 }
 
