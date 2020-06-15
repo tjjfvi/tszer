@@ -60,7 +60,10 @@ export class Serializer<T> {
     deserialize: (value: T) => U | Promise<U>,
   }) {
     return new Serializer<U>({
-      serialize: value => this.serialize(serialize(value)),
+      serialize: value => enga(
+        () => serialize(value),
+        this.serialize,
+      ),
       deserialize: (buffer: Buffer, offset: number) => asyncEnga(
         this.deserialize(buffer, offset),
         async result => ({ ...result, value: await deserialize(result.value) })
