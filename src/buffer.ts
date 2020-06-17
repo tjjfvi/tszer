@@ -5,7 +5,7 @@ import { Serializer } from "./Serializer";
 export const constLengthBuffer = (length: number) => new Serializer<Buffer>({
   length,
   serialize: (val, buf, off) => buf.fill(val, off, off + length),
-  deserialize: (buf, off) => buf.slice(off, off + length),
+  deserialize: (buf) => buf.slice(0, length),
 });
 
 export const buffer = (numberSerializer = uint16LE()) => concat(

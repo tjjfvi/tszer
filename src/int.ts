@@ -3,13 +3,13 @@ import { Serializer } from "./Serializer";
 export const intLE = (byteLength: number) => new Serializer<number>({
   length: byteLength,
   serialize: (num, buf, off) => buf.writeIntLE(num, off, byteLength),
-  deserialize: (buf, off) => buf.readIntLE(off, byteLength),
+  deserialize: (buf) => buf.readIntLE(0, byteLength),
 });
 
 export const intBE = (byteLength: number) => new Serializer<number>({
   length: byteLength,
   serialize: (num, buf, off) => buf.writeIntBE(num, off, byteLength),
-  deserialize: (buf, off) => buf.readIntBE(off, byteLength),
+  deserialize: (buf) => buf.readIntBE(0, byteLength),
 });
 
 export const int8 = () => intLE(1);

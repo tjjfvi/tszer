@@ -3,5 +3,7 @@
     "strict": true,
     "outDir": "dist",
     "declaration": true,
+    "downlevelIteration": true,
+    "target": "ES2019",
   }
 }
