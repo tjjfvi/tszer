@@ -55,12 +55,13 @@ export class Serializer<T> {
     serialize,
     deserialize,
   }: {
-    serialize: (value: U) => T,
+    serialize: (value: U) => T | Promise<T>,
     deserialize: (value: T) => U | Promise<U>,
   }) {
     return new Serializer<U>({
       serialize: value => async function* (this: Serializer<T>) {
-        yield { gen: () => this.serialize(serialize(value)) }
+        const mappedValue = await serialize(value);
+        yield { gen: () => this.serialize(mappedValue) };
       }.call(this),
       deserialize: () => async function* (this: Serializer<T>): DeserializeResult<U> {
         let nextValue: any;
