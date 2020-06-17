@@ -109,14 +109,16 @@ export class Serializer<T> {
 
         let newGen = value.gen();
         let oldGen = gen;
-        gen = async function* () {
-          yield* newGen;
+        gen =
+          !oldGen ?
+            newGen :
+            async function* () {
+              yield* newGen;
 
-          // yield* won't work here, as the "done" propagation triggers a call stack error
-          gen = null;
-          if (oldGen)
-            yield { gen: () => oldGen };
-        }()
+              // yield* won't work here, as the "done" propagation triggers a call stack error
+              gen = null;
+              yield { gen: () => oldGen };
+            }()
       }
     }
   }
@@ -179,28 +181,28 @@ export class Serializer<T> {
 
         let newGen = value.gen();
         let oldGen = gen;
-        gen = async function* () {
-          while (true) {
-            const result = await newGen.next(nextValue);
-            if (result.done) {
-              nextValue = {
-                value: result.value,
-                get chunk() {
-                  throw new Error("Attempted to access chunk on yield of { gen }");
+        gen =
+          !oldGen ?
+            newGen :
+            async function* () {
+              while (true) {
+                const result = await newGen.next(nextValue);
+                if (result.done) {
+                  nextValue = {
+                    value: result.value,
+                    get chunk() {
+                      throw new Error("Attempted to access chunk on yield of { gen }");
+                    }
+                  }
+                  break;
                 }
+                yield result.value;
               }
-              break;
-            }
-            yield result.value;
-          }
 
-          // yield* won't work here, as the "done" propagation triggers a call stack error
-          gen = null;
-          if (oldGen)
-            yield { gen: () => oldGen };
-
-          return nextValue.value;
-        }()
+              // yield* won't work here, as the "done" propagation triggers a call stack error
+              gen = null;
+              yield { gen: () => oldGen };
+            }()
       }
     }
   }
