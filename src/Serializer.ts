@@ -135,9 +135,8 @@ export class Serializer<T> {
         onMoreData?.();
       })
       .on("end", () => {
+        bufferStream.push(null);
         onMoreData?.();
-        if (onMoreData)
-          throw new Error("Unexpected end of input");
       })
 
     stream.pause();
