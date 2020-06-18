@@ -128,10 +128,18 @@ export class Serializer<T> {
       read: () => { },
     });
     let onMoreData: (() => void) | null = null;
-    stream.on("data", (chunk: Buffer) => {
-      bufferStream.push(chunk);
-      onMoreData?.();
-    })
+
+    stream
+      .on("data", (chunk: Buffer) => {
+        bufferStream.push(chunk);
+        onMoreData?.();
+      })
+      .on("end", () => {
+        onMoreData?.();
+        if (onMoreData)
+          throw new Error("Unexpected end of input");
+      })
+
     stream.pause();
 
     return await flattenRecursiveGen(serializer.deserialize());
@@ -141,6 +149,8 @@ export class Serializer<T> {
         throw new Error("Internal error in tszer");
       if (stream.isPaused())
         stream.resume();
+      if (!size)
+        return Promise.resolve(Buffer.alloc(0))
       return new Promise<Buffer>(resolve => {
         onMoreData = () => {
           const chunk = bufferStream.read(size);
@@ -164,8 +174,10 @@ export class Serializer<T> {
 
         let result = await gen.next(nextValue);
 
-        if (result.done)
+        if (result.done) {
+          stream.destroy();
           return result.value;
+        }
 
         const { value } = result;
 
