@@ -20,6 +20,16 @@ export interface ConstLengthSerializerArgs<T> {
   deserialize: ConstLengthDeserializeFunc<T>,
 }
 
+export interface MapArgs<T, U> {
+  serialize: (value: U) => T | Promise<T>,
+  deserialize: (value: T) => U | Promise<U>,
+}
+
+export const invertMapArgs = <T, U>(args: MapArgs<T, U>): MapArgs<U, T> => ({
+  serialize: args.deserialize,
+  deserialize: args.serialize,
+})
+
 export class Serializer<T> {
 
   serialize: SerializeFunc<T>;
@@ -48,10 +58,7 @@ export class Serializer<T> {
   map<U>({
     serialize,
     deserialize,
-  }: {
-    serialize: (value: U) => T | Promise<T>,
-    deserialize: (value: T) => U | Promise<U>,
-  }) {
+  }: MapArgs<T, U>) {
     return new Serializer<U>({
       serialize: async (value, writeChunk) => {
         const mappedValue = await serialize(value);
