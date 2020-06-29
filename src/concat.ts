@@ -1,4 +1,4 @@
-import { Serializer, DeserializeResult } from "./Serializer";
+import { Serializer } from "./Serializer";
 
 export type ConcatArg<Prev, Cur> = Serializer<Cur> | ((prev: Prev) => Serializer<Cur>);
 
