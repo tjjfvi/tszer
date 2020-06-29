@@ -12,5 +12,6 @@ export * from './float';
 export * from './int';
 export * from './optionalBank';
 export * from './string';
+export * from './tree';
 export * from './uint';
 
