@@ -1,16 +1,10 @@
 import { Readable } from "stream";
+import { resolve } from "path";
 
-export type SerializeResult = AsyncGenerator<{ value: Buffer } | { gen: () => SerializeResult }, void, void>;
-
-export type DeserializeResult<T, S = any> = AsyncGenerator<
-  | { gen: () => DeserializeResult<S> }
-  | { length: number },
-  T,
-  { value: S, chunk: Buffer }
->;
-
-export type SerializeFunc<T> = (value: T) => SerializeResult
-export type DeserializeFunc<T> = () => DeserializeResult<T>
+export type WriteChunk = (chunk: Buffer) => Promise<void>;
+export type SerializeFunc<T> = (value: T, writeChunk: WriteChunk) => Promise<void>
+export type GetChunk = (length: number) => Promise<Buffer>;
+export type DeserializeFunc<T> = (getChunk: GetChunk) => Promise<T>
 
 export interface SerializerArgs<T> {
   serialize: SerializeFunc<T>,
@@ -36,15 +30,15 @@ export class Serializer<T> {
   constructor(args: SerializerArgs<T> | ConstLengthSerializerArgs<T>) {
     if ("length" in args) {
       const { length } = args;
-      this.serialize = value => async function* () {
+      this.serialize = async (value, writeChunk) => {
         const buffer = Buffer.alloc(length);
         args.serialize(value, buffer, 0);
-        yield { value: buffer };
-      }();
-      this.deserialize = () => async function* () {
-        const { chunk } = yield { length };
+        await writeChunk(buffer);
+      };
+      this.deserialize = async getChunk => {
+        const chunk = await getChunk(length);
         return args.deserialize(chunk);
-      }()
+      }
     } else {
       this.serialize = args.serialize;
       this.deserialize = args.deserialize;
@@ -59,20 +53,14 @@ export class Serializer<T> {
     deserialize: (value: T) => U | Promise<U>,
   }) {
     return new Serializer<U>({
-      serialize: value => async function* (this: Serializer<T>) {
+      serialize: async (value, writeChunk) => {
         const mappedValue = await serialize(value);
-        yield { gen: () => this.serialize(mappedValue) };
-      }.call(this),
-      deserialize: () => async function* (this: Serializer<T>): DeserializeResult<U> {
-        let nextValue: any;
-        const gen = this.deserialize();
-        while (true) {
-          const result = await gen.next(nextValue);
-          if (result.done)
-            return deserialize(result.value);
-          nextValue = yield result.value;
-        }
-      }.call(this),
+        return this.serialize(mappedValue, writeChunk);
+      },
+      deserialize: async getChunk => {
+        const value = await this.deserialize(getChunk);
+        return deserialize(value);
+      },
     })
   }
 
@@ -88,39 +76,40 @@ export class Serializer<T> {
   }
 
   static serialize<T>(serializer: Serializer<T>, value: T): Readable {
-    return Readable.from(flattenRecursiveGen(serializer.serialize(value)));
+    return Readable.from({
+      [Symbol.asyncIterator]() {
+        let resolveIterator: ((result: IteratorResult<Buffer, void>) => void) | null = null;
+        let resolveSerializer: (() => void) | null = null;
 
-    async function* flattenRecursiveGen(gen: SerializeResult | null): AsyncGenerator<Buffer, void, void> {
-      while (true) {
-        if (!gen)
-          return;
-
-        let result = await gen.next();
-
-        if (result.done)
-          return;
-
-        let { value } = result;
-
-        if ("value" in value) {
-          yield value.value;
-          continue;
+        resolveSerializer = () => {
+          serializer.serialize(value, writeChunk).then(() => {
+            if (!resolveIterator)
+              throw new Error("Internal error in tszer");
+            resolveIterator({ done: true, value: undefined })
+          })
         }
 
-        let newGen = value.gen();
-        let oldGen = gen;
-        gen =
-          !oldGen ?
-            newGen :
-            async function* () {
-              yield* newGen;
+        return {
+          next() {
+            return new Promise<IteratorResult<Buffer, void>>(r => {
+              if (!resolveSerializer)
+                throw new Error("Internal error in tszer");
+              resolveIterator = r;
+              resolveSerializer();
+            })
+          }
+        }
 
-              // yield* won't work here, as the "done" propagation triggers a call stack error
-              gen = null;
-              yield { gen: () => oldGen };
-            }()
+        function writeChunk(chunk: Buffer) {
+          return new Promise<void>(r => {
+            if (!resolveIterator)
+              throw new Error("Internal error in tszer");
+            resolveIterator({ value: chunk, done: false });
+            resolveSerializer = r
+          });
+        }
       }
-    }
+    });
   }
 
   static async deserialize<T>(serializer: Serializer<T>, stream: Readable) {
@@ -141,7 +130,7 @@ export class Serializer<T> {
 
     stream.pause();
 
-    return await flattenRecursiveGen(serializer.deserialize());
+    return await serializer.deserialize(getChunk);
 
     function getChunk(size: number) {
       if (onMoreData)
@@ -163,58 +152,6 @@ export class Serializer<T> {
         }
         onMoreData();
       })
-    }
-
-    async function flattenRecursiveGen(gen: DeserializeResult<any> | null): Promise<T> {
-      let nextValue: any;
-      while (true) {
-        if (!gen)
-          throw new Error("Interal error in tszer")
-
-        let result = await gen.next(nextValue);
-
-        if (result.done) {
-          stream.destroy();
-          return result.value;
-        }
-
-        const { value } = result;
-
-        if ("length" in value) {
-          nextValue = {
-            chunk: await getChunk(value.length),
-            get value() {
-              throw new Error("Attempted to access value on yield of { length }");
-            }
-          }
-          continue;
-        }
-
-        let newGen = value.gen();
-        let oldGen = gen;
-        gen =
-          !oldGen ?
-            newGen :
-            async function* () {
-              while (true) {
-                const result = await newGen.next(nextValue);
-                if (result.done) {
-                  nextValue = {
-                    value: result.value,
-                    get chunk() {
-                      throw new Error("Attempted to access chunk on yield of { gen }");
-                    }
-                  }
-                  break;
-                }
-                yield result.value;
-              }
-
-              // yield* won't work here, as the "done" propagation triggers a call stack error
-              gen = null;
-              yield { gen: () => oldGen };
-            }()
-      }
     }
   }
 

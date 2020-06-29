@@ -1,34 +1,29 @@
-import { Serializer, DeserializeResult, SerializeResult } from "./Serializer";
+import { Serializer, DeserializeResult } from "./Serializer";
 
 export type ConcatArg<Prev, Cur> = Serializer<Cur> | ((prev: Prev) => Serializer<Cur>);
 
 export function _concat(...args: ConcatArg<any[], any>[]): Serializer<any[]> {
   return new Serializer({
-    serialize: values => async function* () {
+    serialize: async (values, writeChunk) => {
       if (values.length !== args.length)
         throw new Error("Invalid array passed to concat");
       for (let i = 0; i < args.length; i++) {
         let arg = args[i];
         let val = values[i];
-        yield {
-          gen: () => {
-            if (typeof arg === "function")
-              return arg(values).serialize(val)
-            return arg.serialize(val)
-          }
-        };
+        if (typeof arg === "function")
+          await arg(values).serialize(val, writeChunk)
+        else
+          await arg.serialize(val, writeChunk)
       }
-    }(),
-    deserialize: async function* () {
+    },
+    deserialize: async getChunk => {
       let values: any[] = [];
       for (let arg of args) {
-        let { value } = yield {
-          gen: () => {
-            if (typeof arg === "function")
-              return arg(values).deserialize();
-            return arg.deserialize();
-          }
-        };
+        let value = await (
+          typeof arg === "function" ?
+            arg(values).deserialize(getChunk) :
+            arg.deserialize(getChunk)
+        );
         values.push(value);
       }
       return values;
