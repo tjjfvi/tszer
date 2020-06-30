@@ -8,6 +8,6 @@ export const floatLE = () => new Serializer<number>({
 
 export const floatBE = () => new Serializer<number>({
   length: 4,
-  serialize: (num, buf, off) => buf.writeFloatLE(num, off),
-  deserialize: (buf) => buf.writeFloatBE(0),
+  serialize: (num, buf, off) => buf.writeFloatBE(num, off),
+  deserialize: (buf) => buf.readFloatBE(0),
 });

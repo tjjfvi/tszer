@@ -16,7 +16,7 @@ export const tree = <N>(node: Serializer<N>, arrayLength = uint16LE()) =>
             serialize: async value => {
               entries.push(value);
             },
-            deserialize: () => {
+            deserialize: /* istanbul ignore next */ () => {
               throw new Error("Called deserialize on serialize-only Serializer");
             },
           }))
@@ -33,13 +33,13 @@ export const tree = <N>(node: Serializer<N>, arrayLength = uint16LE()) =>
         const reference = concat(
           node,
           optionalArray(new Serializer<Entry>({
-            serialize: () => {
+            serialize: /* istanbul ignore next */ () => {
               throw new Error("Called serialize on deserialize-only Serializer");
             },
             deserialize: async () => addEntry(),
           }))
         ).map<{ value: Promise<T> }>({
-          serialize: () => {
+          serialize: /* istanbul ignore next */ () => {
             throw new Error("Called serialize on deserialize-only Serializer");
           },
           deserialize: ([n, proms]) => ({

@@ -71,17 +71,6 @@ export class Serializer<T> {
     })
   }
 
-  errorOnNull(message: string) {
-    return this.map<NonNullable<T>>({
-      serialize: v => v,
-      deserialize: v => {
-        if (v == null)
-          throw new Error(message);
-        return v as NonNullable<T>;
-      }
-    })
-  }
-
   static serialize<T>(serializer: Serializer<T>, value: T): Readable {
     return Readable.from({
       [Symbol.asyncIterator]() {
@@ -90,7 +79,7 @@ export class Serializer<T> {
 
         resolveSerializer = () => {
           serializer.serialize(value, writeChunk).then(() => {
-            if (!resolveIterator)
+            if (!resolveIterator) /* istanbul ignore next */
               throw new Error("Internal error in tszer");
             resolveIterator({ done: true, value: undefined })
           })
@@ -99,7 +88,7 @@ export class Serializer<T> {
         return {
           next() {
             return new Promise<IteratorResult<Buffer, void>>(r => {
-              if (!resolveSerializer)
+              if (!resolveSerializer) /* istanbul ignore next */
                 throw new Error("Internal error in tszer");
               resolveIterator = r;
               resolveSerializer();
@@ -109,7 +98,7 @@ export class Serializer<T> {
 
         function writeChunk(chunk: Buffer) {
           return new Promise<void>(r => {
-            if (!resolveIterator)
+            if (!resolveIterator) /* istanbul ignore next */
               throw new Error("Internal error in tszer");
             resolveIterator({ value: chunk, done: false });
             resolveSerializer = r
@@ -140,7 +129,7 @@ export class Serializer<T> {
     return await serializer.deserialize(getChunk);
 
     function getChunk(size: number) {
-      if (onMoreData)
+      if (onMoreData) /* istanbul ignore next */
         throw new Error("Internal error in tszer");
       if (stream.isPaused())
         stream.resume();
