@@ -25,11 +25,6 @@ export interface MapArgs<T, U> {
   deserialize: (value: T) => U | Promise<U>,
 }
 
-export const invertMapArgs = <T, U>(args: MapArgs<T, U>): MapArgs<U, T> => ({
-  serialize: args.deserialize,
-  deserialize: args.serialize,
-})
-
 export class Serializer<T> {
 
   serialize: SerializeFunc<T>;
