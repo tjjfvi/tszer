@@ -15,13 +15,18 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/bl": "^2.1.0",
     "@types/jest": "^26.0.3",
     "@types/node": "^14.0.11",
+    "@types/stream-buffers": "^3.0.3",
     "create-index-better": "^1.4.1",
     "jest": "^26.1.0",
+    "stream-buffers": "^3.0.2",
     "ts-jest": "^26.1.1",
     "ts-node": "^8.10.2",
     "typescript": "^3.9.5"
   },
-  "dependencies": {}
+  "dependencies": {
+    "bl": "^4.0.2"
+  }
 }

@@ -1,5 +1,5 @@
-import { Readable } from "stream";
-import { resolve } from "path";
+import { Readable, Writable } from "stream";
+import BufferList = require("bl");
 
 export type WriteChunk = (chunk: Buffer) => Promise<void>;
 export type SerializeFunc<T> = (value: T, writeChunk: WriteChunk) => Promise<void>
@@ -103,42 +103,60 @@ export class Serializer<T> {
     });
   }
 
-  static async deserialize<T>(serializer: Serializer<T>, stream: Readable) {
-    let bufferStream = new Readable({
-      read: () => { },
-    });
+  static async deserialize<T>(serializer: Serializer<T>, stream: Readable): Promise<T> {
+    const bufferList = new BufferList();
+
     let onMoreData: (() => void) | null = null;
+    let ended = false;
+    let resume = () => { };
+    let final = () => { };
 
-    stream
-      .on("data", (chunk: Buffer) => {
-        bufferStream.push(chunk);
+    let writeStream = new Writable({
+      write: (chunk, _, callback) => {
+        bufferList.append(chunk);
+        resume = callback;
         onMoreData?.();
-      })
-      .on("end", () => {
-        bufferStream.push(null);
+      },
+      final: (callback) => {
+        final = callback;
+        ended = true;
         onMoreData?.();
-      })
+      },
+    })
 
-    stream.pause();
+    stream.pipe(writeStream);
 
-    return await serializer.deserialize(getChunk);
+    let value = await serializer.deserialize(getChunk);
+    if (onMoreData) /* istanbul ignore next */
+      throw new Error("Internal error in tszer");
+    return await new Promise((resolve, reject) => {
+      onMoreData = () => {
+        if (bufferList.length)
+          return reject(new Error("Expected end of input"));
+        onMoreData = null;
+        writeStream.destroy();
+        final();
+        resolve(value);
+      }
+      if (ended) onMoreData();
+      else resume();
+    })
 
     function getChunk(size: number) {
-      if (onMoreData) /* istanbul ignore next */
-        throw new Error("Internal error in tszer");
-      if (stream.isPaused())
-        stream.resume();
       if (!size)
         return Promise.resolve(Buffer.alloc(0))
+      if (onMoreData) /* istanbul ignore next */
+        throw new Error("Internal error in tszer");
       return new Promise<Buffer>(resolve => {
         onMoreData = () => {
-          const chunk = bufferStream.read(size);
-          if (!chunk)
-            return;
-          if (chunk.length !== size)
-            throw new Error("Unexpected end of input");
+          if (bufferList.length < size)
+            if (!ended)
+              return resume();
+            else
+              throw new Error("Unexpected end of input");
+          const chunk = bufferList.slice(0, size);
+          bufferList.consume(size);
           onMoreData = null;
-          stream.pause();
           resolve(chunk);
         }
         onMoreData();
