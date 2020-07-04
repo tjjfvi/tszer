@@ -1,0 +1,134 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`checkVersionUnambiguity invalid commonPrefix 1`] = `
+"Ambiguous version 61636964
+  - 6161
+  - 6162
+  - 6163
+  - 61636964"
+`;
+
+exports[`checkVersionUnambiguity invalid complex 1`] = `
+"Ambiguous version 617078
+  - 6170
+  - 617078
+  - 617079
+  - 61707961
+  - 61707a
+  - 617178
+  - 61717930
+  - 617079302d7072696d65
+  - 61717977
+  - 62
+  - 7370656369616c20636861726163746572733a2021402324255e262a28292d5f3d2b5b5d5c2f3e3c2c2e7e
+  - 7370656369616c20636861726163746572733a2021402324255e262a28292d5f3d2b5b5d5c2f3e3c2c2e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e
+  - 77656972643a2000080b090c0a0d0be188b4e599b8
+  - 77656972643a2000080b090c0a0d0be188b4e599b842"
+`;
+
+exports[`checkVersionUnambiguity invalid emptyStringWithMultiple 1`] = `
+"Ambiguous version 61
+  - 
+  - 61"
+`;
+
+exports[`checkVersionUnambiguity invalid long 1`] = `
+"Ambiguous version 616e6420616e6f746865722073656e74656e6365
+  - 7468697320697320612073656e74656e6365
+  - 616e6420616e6f746865722073656e74656e6365
+  - 616e6420616e6f746865722073656e74656e6365
+  - 616e642066696e616c6c792074686973"
+`;
+
+exports[`checkVersionUnambiguity invalid singleLetters 1`] = `
+"Ambiguous version 63
+  - 61
+  - 62
+  - 63
+  - 63"
+`;
+
+exports[`version commonPrefix invalid 1`] = `"Invalid version"`;
+
+exports[`version complex invalid 1`] = `"Invalid version"`;
+
+exports[`version justEmptyString invalid 1`] = `"Expected end of input"`;
+
+exports[`version long invalid 1`] = `"Invalid version"`;
+
+exports[`version singleLetters invalid 1`] = `"Invalid version"`;
+
+exports[`versionToBuffer 0 1`] = `
+Object {
+  "data": Array [
+    0,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`versionToBuffer 1 1`] = `
+Object {
+  "data": Array [
+    1,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`versionToBuffer 2 1`] = `
+Object {
+  "data": Array [
+    2,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`versionToBuffer 255 1`] = `
+Object {
+  "data": Array [
+    255,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`versionToBuffer buffer 1`] = `
+Object {
+  "data": Array [
+    1,
+    24,
+    153,
+    152,
+    129,
+    153,
+    145,
+    25,
+    114,
+    83,
+  ],
+  "type": "Buffer",
+}
+`;
+
+exports[`versionToBuffer emptyString 1`] = `
+Object {
+  "data": Array [],
+  "type": "Buffer",
+}
+`;
+
+exports[`versionToBuffer string 1`] = `
+Object {
+  "data": Array [
+    97,
+    98,
+    99,
+    49,
+    50,
+    51,
+  ],
+  "type": "Buffer",
+}
+`;
