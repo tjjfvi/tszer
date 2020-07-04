@@ -163,13 +163,13 @@ export class Serializer<T> {
         return Promise.resolve(Buffer.alloc(0))
       if (onMoreData) /* istanbul ignore next */
         throw new Error("Internal error in tszer");
-      return new Promise<Buffer>(resolve => {
+      return new Promise<Buffer>((resolve, reject) => {
         onMoreData = () => {
           if (bufferList.length < size)
             if (!ended)
               return resume();
             else
-              throw new Error("Unexpected end of input");
+              return reject(new Error("Unexpected end of input"));
           const chunk = bufferList.slice(0, size);
           bufferList.consume(size);
           onMoreData = null;
