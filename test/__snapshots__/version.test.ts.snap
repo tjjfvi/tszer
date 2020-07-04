@@ -48,15 +48,23 @@ exports[`checkVersionUnambiguity invalid singleLetters 1`] = `
   - 63"
 `;
 
-exports[`version commonPrefix invalid 1`] = `"Invalid version"`;
+exports[`version commonPrefix invalid emptyString 1`] = `"Unexpected end of input"`;
 
-exports[`version complex invalid 1`] = `"Invalid version"`;
+exports[`version commonPrefix invalid long 1`] = `"Invalid version"`;
 
-exports[`version justEmptyString invalid 1`] = `"Expected end of input"`;
+exports[`version complex invalid emptyString 1`] = `"Unexpected end of input"`;
 
-exports[`version long invalid 1`] = `"Invalid version"`;
+exports[`version complex invalid long 1`] = `"Invalid version"`;
 
-exports[`version singleLetters invalid 1`] = `"Invalid version"`;
+exports[`version justEmptyString invalid long 1`] = `"Expected end of input"`;
+
+exports[`version long invalid emptyString 1`] = `"Unexpected end of input"`;
+
+exports[`version long invalid long 1`] = `"Invalid version"`;
+
+exports[`version singleLetters invalid emptyString 1`] = `"Unexpected end of input"`;
+
+exports[`version singleLetters invalid long 1`] = `"Invalid version"`;
 
 exports[`versionToBuffer 0 1`] = `
 Object {

@@ -22,15 +22,23 @@ const validVersionTests: [string, string[]][] = [
 ]
 
 describe("version", () => {
-  describe.each(validVersionTests)("%s", (_, versions) => {
+  describe.each(validVersionTests)("%s", (name, versions) => {
     const serializer = version(versions);
     test.each(versions)("%s", async version => {
       expect(await dss(serializer, version)).toEqual(version)
     })
-    test("invalid", async () => {
-      await expect(
-        Serializer.deserialize(serializer, Readable.from(["this is always invalid"]))
-      ).rejects.toThrowErrorMatchingSnapshot();
+    describe("invalid", () => {
+      test("long", async () => {
+        await expect(
+          serializer.deserialize(Readable.from(["this is always invalid"]))
+        ).rejects.toThrowErrorMatchingSnapshot();
+      })
+      if (name !== "justEmptyString")
+        test("emptyString", async () => {
+          await expect(
+            serializer.deserialize(Readable.from([]))
+          ).rejects.toThrowErrorMatchingSnapshot();
+        })
     })
   })
 });
