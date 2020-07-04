@@ -10,8 +10,8 @@ test.each([
   const path = __dirname + "/stl/" + fileName;
   const readStream = createReadStream(path);
   const origHash = await hash(createReadStream(path));
-  const deserialized = await Serializer.deserialize(stlMesh(), readStream);
-  const reserializedHash = await hash(Serializer.serialize(stlMesh(), deserialized));
+  const deserialized = await stlMesh().deserialize(readStream);
+  const reserializedHash = await hash(stlMesh().serialize(deserialized));
   expect(deserialized).toMatchSnapshot();
   expect(reserializedHash).toEqual(origHash);
 })

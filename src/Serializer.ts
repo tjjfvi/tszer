@@ -27,26 +27,42 @@ export interface MapArgs<T, U> {
 
 export class Serializer<T> {
 
-  serialize: SerializeFunc<T>;
-  deserialize: DeserializeFunc<T>;
+  private _serialize: SerializeFunc<T>;
+  private _deserialize: DeserializeFunc<T>;
+
+  serialize(value: T, _?: undefined): Readable
+  serialize(value: T, writeChunk: WriteChunk): Promise<void>
+  serialize(value: T, writeChunk?: WriteChunk): Readable | Promise<void> {
+    if (!writeChunk)
+      return Serializer.serialize(this, value);
+    return this._serialize(value, writeChunk);
+  }
+
+  deserialize(stream: Readable): Promise<T>
+  deserialize(getChunk: GetChunk): Promise<T>
+  deserialize(getChunk: Readable | GetChunk): Promise<T> {
+    if (getChunk instanceof Readable)
+      return Serializer.deserialize(this, getChunk);
+    return this._deserialize(getChunk);
+  }
 
   constructor(args: ConstLengthSerializerArgs<T>)
   constructor(args: SerializerArgs<T>)
   constructor(args: SerializerArgs<T> | ConstLengthSerializerArgs<T>) {
     if ("length" in args) {
       const { length } = args;
-      this.serialize = async (value, writeChunk) => {
+      this._serialize = async (value, writeChunk) => {
         const buffer = Buffer.alloc(length);
         args.serialize(value, buffer, 0);
         await writeChunk(buffer);
       };
-      this.deserialize = async getChunk => {
+      this._deserialize = async getChunk => {
         const chunk = await getChunk(length);
         return args.deserialize(chunk);
       }
     } else {
-      this.serialize = args.serialize;
-      this.deserialize = args.deserialize;
+      this._serialize = args.serialize;
+      this._deserialize = args.deserialize;
     }
   }
 
@@ -57,10 +73,10 @@ export class Serializer<T> {
     return new Serializer<U>({
       serialize: async (value, writeChunk) => {
         const mappedValue = await serialize(value);
-        return this.serialize(mappedValue, writeChunk);
+        return this._serialize(mappedValue, writeChunk);
       },
       deserialize: async getChunk => {
-        const value = await this.deserialize(getChunk);
+        const value = await this._deserialize(getChunk);
         return deserialize(value);
       },
     })
@@ -73,7 +89,7 @@ export class Serializer<T> {
         let resolveSerializer: (() => void) | null = null;
 
         resolveSerializer = () => {
-          serializer.serialize(value, writeChunk).then(() => {
+          serializer._serialize(value, writeChunk).then(() => {
             if (!resolveIterator) /* istanbul ignore next */
               throw new Error("Internal error in tszer");
             resolveIterator({ done: true, value: undefined })
@@ -126,7 +142,7 @@ export class Serializer<T> {
 
     stream.pipe(writeStream);
 
-    let value = await serializer.deserialize(getChunk);
+    let value = await serializer._deserialize(getChunk);
     if (onMoreData) /* istanbul ignore next */
       throw new Error("Internal error in tszer");
     return await new Promise((resolve, reject) => {
