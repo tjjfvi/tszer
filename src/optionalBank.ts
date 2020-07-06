@@ -22,10 +22,10 @@ export function optionalBank(...args: Serializer<any>[]): Serializer<any> {
   return concat(
     flags(args.length),
     ([flags]) => _concat(...args.map<Serializer<any>>((a, i) => (
-      flags[i] ? constant(undefined) : a
+      !flags[i] ? constant(undefined) : a
     )))
   ).map({
-    serialize: vals => [vals.map((val: any) => val === undefined), vals],
+    serialize: vals => [vals.map((val: any) => val !== undefined), vals],
     deserialize: ([, vals]) => vals,
   })
 }

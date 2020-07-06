@@ -10,3 +10,16 @@ test.each<[string, [number?, string?, string[]?]]>([
 ])("%s", async (_, args) => {
   expect(await dss(serializer, args)).toEqual(args);
 });
+
+test("backwardsCompatible", async () => {
+  const oldSer = optionalBank(
+    floatLE(),
+    string(),
+  );
+  const newSer = optionalBank(
+    floatLE(),
+    string(),
+    array(string()),
+  );
+  expect(await newSer.deserialize(oldSer.serialize([123, "abc"]))).toEqual([123, "abc", undefined]);
+})
